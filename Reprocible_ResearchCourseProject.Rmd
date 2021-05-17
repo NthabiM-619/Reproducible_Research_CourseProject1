@@ -1,0 +1,161 @@
+---
+title: "Reproducible_Research"
+author: "Nthabiseng Mogoane"
+date: "5/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+##Loading and preprocessing the data
+#1.Load the data
+if(!file.exists("getdata-projectfiles-UCI HAR Dataset.zip")){
+  temp <- tempfile()
+  download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",temp)
+  unzip(temp)
+  unlink(temp)
+}
+activity <- read.csv("activity.csv")
+head(activity)
+```
+
+
+#What is the mean number of steps taken per day?
+```{r}
+totalStepsByDay <- aggregate(steps~date, activity, sum)
+```
+
+##Step 2
+#Histogram of the total Number of Steps taken each day
+``{r, echo = TRUE}
+hist(totalStepsByDay$steps, xlab="Class of Total Number of Steps per day", ylab="Number of Days", main="Total Number of Steps taken each day")
+```
+
+##Step 3
+##Calculate and report the Mean and Median Number of the Steps taken each day
+
+```{r, echo = TRUE}
+mean_raw <- mean(totalStepsByDay$steps)
+mean_raw
+#Mean number of steps taken per day is 1.076618910^{4}
+
+median_raw <- median(totalStepsByDay$steps)
+median_raw
+#Median number of steps taken per day is 10765
+```
+
+#What is the Average daily activity pattern?
+
+##Step 4
+##The Average Number of steps taken
+```{r, echo = TRUE}
+averageStepbyInterval <- aggregate(steps~interval, activity, mean)
+
+##Time series Plot of the Average Number of Steps taken
+with(averageStepbyInterval, plot(interval, steps, type = "l"))
+```
+
+
+##Step 5
+##The 5-minute interval that, on average, contains the maximum Number of Steps.
+
+```{r, echo = TRUE}
+averageStepbyInterval[which.max(averageStepbyInterval[,2]), 1]
+```
+
+
+##Step 6
+## Imputing missing values
+##Calculate and report the Total Number of missing values in the dataset(i.e.the total number of rows with NAs)
+```{r, echo = TRUE}
+missingIndex <- is.na(activity[, 1])
+# There are 2304 missing values in the dataset.
+
+#finding the mean Number of Steps per Interval
+m <-  mean(averageStepbyInterval$steps)
+```
+
+##Step 7
+
+```{r, echo = TRUE}
+
+#Imputing missing values with m 
+activity1 <- activity
+activity1[missingIndex, 1] <- m
+head(activity1)
+
+#Histogram of the Total Number of steps taken each day after missing values are imputed.
+totalStepsByDay1 <- aggregate(steps~date, activity1, sum)
+hist(totalStepsByDay1$steps, xlab = "Class of Total Number of Steps per day", ylab = "Number of Days", main = "Number of Steps taken each day after missing values are imputed")
+```
+
+```{r, echo = TRUE}
+#Calculate the mean and median total number of steps per day, firstly, we get the total number of steps per day
+
+totalStepsByDay1 <- aggregate(steps~date, activity1, sum)
+mean_afterImput <- mean(totalStepsByDay1$steps)
+mean_afterImput
+
+#Mean Number of steps taken per day is 1.076618910^{4}
+
+median_afterImput <- median(totalStepsByDay1$steps)
+median_afterImput
+
+#Median Number of steps taken per day is 1.076618910^{4}
+
+#There is no difference in mean before and after imputing the value.The median has changed a little.
+```
+
+
+##Step 8
+##Creating a new factor variable in the dataset with two levels "weekday" and "weekend" which will indicate whether a given date is a weekday or weekend
+```{r, echo = TRUE}
+activity1$date <- as.Date(activity1$date)
+library(dplyr)
+activity2 <- activity1%>%
+    mutate(dayType = ifelse(weekdays(activity1$date)=="Saturday" | weekdays(activity1$date)=="Sunday", "Weekend", "Weekday"))
+    head(activity2)
+ ``` 
+    
+#Panel plot comparing thea average number of steps taken per 5-minute interval across weekdays and weekends
+```{r, echo = TRUE}
+averageStepByDayTypeAndInterval <- activity2%>%
+group_by(dayType, interval) %>%
+summarize(averageStepByDay = sum(steps))
+head(averageStepByDayTypeAndInterval)
+
+library(lattice)
+with(averageStepByDayDayTypeAndInterval,
+xyplot(averageStepByDayTypeAndInterval ~ interval | dayType,
+type = "l",
+main = "Total Number of steps within Intervals by dayType",
+xlab = "Daily Intervals",
+ylab = "Average Number of steps"))
+```    
+
+
+
+```
+
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
